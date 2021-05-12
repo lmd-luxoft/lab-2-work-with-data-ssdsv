@@ -40,7 +40,10 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Field.cs" />
+    <Compile Include="FieldType.cs" />
     <Compile Include="Monopoly.cs" />
+    <Compile Include="Player.cs" />
     <Compile Include="TestClass.cs" />
   </ItemGroup>
   <ItemGroup>
