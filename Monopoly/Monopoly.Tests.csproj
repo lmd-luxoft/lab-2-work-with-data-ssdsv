@@ -41,9 +41,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Field.cs" />
+    <Compile Include="FieldList.cs" />
     <Compile Include="FieldType.cs" />
+    <Compile Include="BuyPricer.cs" />
     <Compile Include="Monopoly.cs" />
     <Compile Include="Player.cs" />
+    <Compile Include="PlayerList.cs" />
+    <Compile Include="RentPricer.cs" />
     <Compile Include="TestClass.cs" />
   </ItemGroup>
   <ItemGroup>

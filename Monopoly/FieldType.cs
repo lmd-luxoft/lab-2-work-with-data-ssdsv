@@ -1,15 +1,13 @@
 ﻿namespace Monopoly
 {
-    partial class Monopoly
+    internal enum FieldType
     {
-        internal enum FieldType
-        {
-            AUTO,
-            FOOD,
-            CLOTHER,
-            TRAVEL,
-            PRISON,
-            BANK
-        }
+        AUTO,
+        FOOD,
+        CLOTHER,
+        TRAVEL,
+        PRISON,
+        BANK,
+        NONE
     }
 }

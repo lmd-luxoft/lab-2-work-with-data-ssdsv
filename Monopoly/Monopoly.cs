@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 
 namespace Monopoly
 {
@@ -8,130 +6,75 @@ namespace Monopoly
     {
         private const int InitialMoney = 6000;
 
-        public List<Player> players = new List<Player>();
-        public List<Field> fields = new List<Field>();
+        public readonly FieldList fieldList = new FieldList();
+        private readonly PlayerList playerList = new PlayerList();
 
-        public Monopoly(string[] p, int v)
+        private readonly BuyPricer buyPricer;
+        private readonly RentPricer rentPricer;
+
+        public Monopoly(string[] p)
         {
-            for (int i = 1; i <= v; i++)
+            var playerCount = p.Length;
+            
+            for (int i = 0; i < playerCount; i++)
             {
-                players.Add(new Player(i, p[i], InitialMoney));
+                playerList.Add(i + 1, p[i], InitialMoney);
             }
-            fields.Add(new Field("Ford", FieldType.AUTO));
-            fields.Add(new Field("MCDonald", FieldType.FOOD));
-            fields.Add(new Field("Lamoda", FieldType.CLOTHER));
-            fields.Add(new Field("Air Baltic", FieldType.TRAVEL));
-            fields.Add(new Field("Nordavia", FieldType.TRAVEL));
-            fields.Add(new Field("Prison", FieldType.PRISON));
-            fields.Add(new Field("MCDonald", FieldType.FOOD));
-            fields.Add(new Field("TESLA", FieldType.AUTO));
+
+            buyPricer = new BuyPricer();
+            rentPricer = new RentPricer(playerList);
+
+            fieldList.Add("Ford", FieldType.AUTO);
+            fieldList.Add("MCDonald", FieldType.FOOD);
+            fieldList.Add("Lamoda", FieldType.CLOTHER);
+            fieldList.Add("Air Baltic", FieldType.TRAVEL);
+            fieldList.Add("Nordavia", FieldType.TRAVEL);
+            fieldList.Add("Prison", FieldType.PRISON);
+            fieldList.Add("MCDonald", FieldType.FOOD);
+            fieldList.Add("DeutscheBank", FieldType.BANK);
+            fieldList.Add("TESLA", FieldType.AUTO);
         }
 
         internal IReadOnlyCollection<Player> GetPlayersList()
         {
-            return players;
+            return playerList.GetAll();
         }
 
         internal IReadOnlyCollection<Field> GetFieldsList()
         {
-            return fields;
+            return fieldList.GetAll();
         }
 
         internal Field GetFieldByName(string v)
         {
-            return (from p in fields where p.Name == v select p).FirstOrDefault();
+            return fieldList.GetByName(v);
         }
 
         internal bool Buy(int buyerId, Field field)
         {
+            if (field.IsOwned())
+                return false;
+
             var buyer = GetPlayerInfo(buyerId);
-            switch (field.FieldType)
-            {
-                case FieldType.AUTO:
-                    if (field.OwnerId != 0)
-                        return false;
-                    buyer.ChangeMoney(-500);
-                    break;
-                case FieldType.FOOD:
-                    if (field.OwnerId != 0)
-                        return false;
-                    buyer.ChangeMoney(-250);
-                    break;
-                case FieldType.TRAVEL:
-                    if (field.OwnerId != 0)
-                        return false;
-                    buyer.ChangeMoney(-700);
-                    break;
-                case FieldType.CLOTHER:
-                    if (field.OwnerId != 0)
-                        return false;
-                    buyer.ChangeMoney(-100);
-                    break;
-                default:
-                    return false;
-            }
-            int i = players.Select((item, index) => new { name = item.Name, index = index })
-                .Where(n => n.name == buyer.Name)
-                .Select(p => p.index).FirstOrDefault();
-            fields[i] = new Field(field.Name, field.Item2, buyerId, field.Item4);
-            field.SetOwner(buyerId);
+
+            if (!buyPricer.TryToBuy(field.FieldType, buyer))
+                return false;
+
+            field.SetOwner(buyer.Id);
+
             return true;
         }
 
-        internal Player GetPlayerInfo(int v)
+        internal Player GetPlayerInfo(int playerId)
         {
-            return players[v - 1];
+            return playerList.GetById(playerId);
         }
 
-        internal bool Renta(int v, Field k)
+        internal bool Renta(int guestId, Field field)
         {
-            var guest = GetPlayerInfo(v);
-            Tuple<string, int> owner = null;
-            switch (k.FieldType)
-            {
-                case FieldType.AUTO:
-                    if (k.OwnerId == 0)
-                        return false;
-                    owner = GetPlayerInfo(k.OwnerId);
-                    guest = new Player(guest.Name, guest.Item2 - 250);
-                    owner = new Player(owner.Name, owner.Item2 + 250);
-                    break;
-                case FieldType.FOOD:
-                    if (k.OwnerId == 0)
-                        return false;
-                    owner = GetPlayerInfo(k.OwnerId);
-                    guest = new Player(guest.Name, guest.Item2 - 250);
-                    owner = new Player(owner.Name, owner.Item2 + 250);
+            var guest = GetPlayerInfo(guestId);
 
-                    break;
-                case FieldType.TRAVEL:
-                    if (k.OwnerId == 0)
-                        return false;
-                    owner = GetPlayerInfo(k.OwnerId);
-                    guest = new Player(guest.Name, guest.Item2 - 300);
-                    owner = new Player(owner.Name, owner.Item2 + 300);
-                    break;
-                case FieldType.CLOTHER:
-                    if (k.OwnerId == 0)
-                        return false;
-                    owner = GetPlayerInfo(k.OwnerId);
-                    guest = new Player(guest.Name, guest.Item2 - 100);
-                    owner = new Player(owner.Name, owner.Item2 + 1000);
-
-                    break;
-                case FieldType.PRISON:
-                    guest = new Player(guest.Name, guest.Item2 - 1000);
-                    break;
-                case FieldType.BANK:
-                    guest = new Player(guest.Name, guest.Item2 - 700);
-                    break;
-                default:
-                    return false;
-            }
-            players[v - 1] = guest;
-            if (owner != null)
-                players[k.OwnerId - 1] = owner;
-            return true;
+            return rentPricer.TryToRent(field, guest);
         }
     }
 }
